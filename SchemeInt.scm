@@ -128,24 +128,24 @@
 ;; eval_def creates the binding for a single definition
 
 (define eval_def
-  (lambda (def env)
+  (lambda (def env store defs)
     (cond
     ((vdef? def)
       (let ((ref (gensym)))
-        (let ((new-binding (cons (vname def) ref)))
-          (let ((new-env (cons new-binding env )))
+        (let ((new-binding (list (vname def) ref)))
+          (let ((new-env (list new-binding env )))
             (list new-binding
-              (list ref (eval_expr (caddr def))))))))
+              (list ref (eval_expr (caddr def) env store defs)))))))
     ((fdef? def)
         (let ((ref (gensym)))
-          (let ((new-binding (cons (fname def) ref)))
-            (let ((new-env (cons new-binding env )))
+          (let ((new-binding (list (fname def) ref)))
+            (let ((new-env (list new-binding env )))
               (list new-binding
                 (list ref (params def) (body def) new-env))))))
     ((pdef? def)
         (let ((ref (gensym)))
-          (let ((new-binding (cons (pname def) ref)))
-            (let ((new-env (cons new-binding env )))
+          (let ((new-binding (list (pname def) ref)))
+            (let ((new-env (list new-binding env )))
               (list new-binding
                 (list ref (params def) (body def) new-env))))))
     (else (error ""unknown definition type"" def)))
@@ -178,12 +178,49 @@
 ;; merge is adding to the different lists
 (define eval_defs
   (lambda (def env store defs)
-     (if (null? def)
-        (list env store defs)
-        (let ((new-binding (eval_def (car def) env)))
-               (eval_defs (cdr def) (merge2 new-binding env store))))
+    (if (null? def)
+      (list env store defs)
+      (let ((new-binding (eval_def (car def) env store defs)))
+        (let ((merge-list (mergeAll (caar def) new-binding env store defs)))
+              (eval_defs (cdr def) (car merge-list) (cadr merge-list) (caddr merge-list))
+        )
+      )
+    )
   )
 )
+
+
+(define mergeAll
+  (lambda (def new-binding env store defs)
+    (cond
+      ((eq? def 'var)
+        (list
+          (cons (car new-binding) env)
+          (cons (cadr new-binding) store)
+          defs
+        )
+      )
+      ((eq? def 'fun)
+        (list
+          (cons (car new-binding) env)
+          store
+          (cons (cadr new-binding) defs)
+        )
+      )
+      ((eq? def 'proc)
+        (list
+          (cons (car new-binding) env)
+          store
+          (cons (cadr new-binding) defs)
+        )
+      )
+      (else display def)
+    )
+  )
+)
+
+
+
 
 (define merge
   (lambda (new-binding env defs)
@@ -198,11 +235,6 @@
       (cons (cadr new-binding) store))))
 
 
-(define merge1
-  (lambda (binding env)
-    (cond
-      ((empty? binding) env)
-    (else (cons binding env)))))
 ;; where "merge" would take the bindings returned from eval_def
 ;; and cons the two association lists to the current env store defs
 
