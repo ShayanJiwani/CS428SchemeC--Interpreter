@@ -1,1 +1,2 @@
-(define ptree (quote  (prog ( (pdef main ( ) (block ( (vdef x 1 ) (vdef y (expr + x 1 ) ) ) ( (if2 (comp x ge y ) (print x ) (print y ) ) ) ) ) ) (pcall main ( ) ) )))
+(define ptree (quote  (prog ( (pdef main ( ) (block ( (vdef x 1 ) (vdef y (expr + x 1 ) ) ) 
+( (if2 (comp x ge y ) (print x ) (print y ) ) ) ) ) ) (pcall main ( ) ) )))
