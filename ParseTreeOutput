@@ -1,2 +1,63 @@
+;;All Test Cases
+
+;; Test Case 1: max of x and y
 (define ptree (quote  (prog ( (pdef main ( ) (block ( (vdef x 1 ) (vdef y (expr + x 1 ) ) ) 
 ( (if2 (comp x ge y ) (print x ) (print y ) ) ) ) ) ) (pcall main ( ) ) )))
+
+
+
+
+;; Test Case 2: sum 1 to 5
+(define ptree (quote  (prog ( (pdef main ( ) (block ( (vdef sum 0 ) (vdef i 5 ) ) 
+( (while (comp i ge 0 ) (block ( ) ( (assign sum (expr + sum i ) ) 
+(assign i (expr - i 1 ) ) ) ) ) (print sum ) ) ) ) ) (pcall main ( ) ) )))
+
+
+
+
+;; Test Case 3: temperature conversion
+(define ptree (quote  (prog ( (vdef result 0 ) (fdef convert ( (val c ) ) (expr + (expr / (expr * c 9 ) 5 ) 32 ) ) 
+(pdef main ( ) (block ( (vdef n 55 ) ) ( (assign result (fcall convert ( n ) ) ) (print result ) ) ) ) ) 
+(pcall main ( ) ) )))
+
+
+
+
+;;T4
+(define ptree (quote  (prog ( (pdef p ( (val x ) (var result ) ) (block ( ) ( (if1 (comp x ge 0 ) 
+(block ( ) ( (assign result (expr * result x ) ) (pcall p ( (expr - x 1 ) result ) ) ) ) ) ) ) ) 
+(pdef main ( ) (block ( (vdef n 5 ) (vdef product 1 ) ) ( (pcall p ( n product ) ) (print product ) ) ) ) ) 
+(pcall main ( ) ) )))
+
+
+
+
+;T5
+(define ptree (quote  (prog ( (vdef n 0 ) (vdef fib0 0 ) (pdef fib ( (val n ) (var result ) ) 
+(block ( (vdef fib0 0 ) (vdef fib1 1 ) ) ( (while (comp n ge 0 ) (block ( (vdef temp fib0 ) ) 
+( (assign fib0 fib1 ) (assign fib1 (expr + fib0 temp ) ) (assign n (expr - n 1 ) ) ) ) ) 
+(assign result fib0 ) ) ) ) (pdef main ( ) (block ( ) ( (assign n 8 ) (pcall fib ( n fib0 ) ) (print fib0 ) ) ) ) ) 
+(pcall main ( ) ) )))
+
+
+
+
+;T6
+(define ptree (quote  (prog ( (fdef ack ( (val x ) (val y ) ) (if (comp x ge 0 ) (if (comp y ge 0 ) 
+(fcall ack ( (expr - x 1 ) (fcall ack ( x (expr - y 1 ) ) ) ) ) (fcall ack ( (expr - x 1 ) 1 ) ) ) (expr + y 1 ) ) ) 
+(pdef main ( ) (block ( (vdef a 5 ) (vdef b 2 ) ) ( (print (fcall ack ( a b ) ) ) ) ) ) ) (pcall main ( ) ) )))
+
+
+
+
+;T7
+(define ptree (quote  (prog ( (fdef gcd ( (val p ) (val q ) ) (if (comp q eq 0 ) p (fcall gcd ( q (expr % p q ) ) ) ) ) 
+(pdef inc ( (var y ) ) (block ( ) ( (assign y (expr + y 1 ) ) ) ) ) (pdef main ( ) (block ( (vdef count 0 ) (vdef n 20 ) 
+(vdef i 1 ) ) ( (while (comp i le n ) (block ( (vdef flag (fcall gcd ( i n ) ) ) ) ( (if1 (comp flag eq 1 ) 
+(pcall inc ( count ) ) ) (pcall inc ( i ) ) ) ) ) (print count ) ) ) ) ) (pcall main ( ) ) )))
+
+
+
+
+
+
