@@ -64,8 +64,6 @@
 
 ;(param_vals '(x) '((a #) (sq @)) '((# 4)) '(((@ (x) ;(pexpr * x x) ((sq @) ())))))
 
-(fcall '(fcall sq (a)) '((sq @) (a #)) '(()) '((@ (x) (pexpr * x x) ((sq @) ()))))
-
 (define fcall
   (lambda (exp env store defs)
     (let ((ref (cadr (assoc (cadr exp) env))))
@@ -377,5 +375,4 @@
 ; need to return the env to use after a block
 
 
-
-(fcall '(fcall sq (3)) '((sq @)) '() '((@ (x) (pexpr * x x) ((sq @) ()))))
+(fcall '(fcall add (a, b)) '((sq @) (a #)) '((# 5)) '((@ (x) (pexpr * x x) ((sq @) ()))))
