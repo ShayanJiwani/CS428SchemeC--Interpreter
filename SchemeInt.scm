@@ -64,6 +64,8 @@
 
 ;(param_vals '(x) '((a #) (sq @)) '((# 4)) '(((@ (x) ;(pexpr * x x) ((sq @) ())))))
 
+(fcall '(fcall sq (a)) '((sq @) (a #)) '(()) '((@ (x) (pexpr * x x) ((sq @) ()))))
+
 (define fcall
   (lambda (exp env store defs)
     (let ((ref (cadr (assoc (cadr exp) env))))
@@ -71,8 +73,8 @@
         (let ((formal-params (closure_params closure)))
           (let ((param-refs (temp_refs (caddr exp))))
             (let ((param-vals (param_vals (caddr exp) env store defs)))
-              (let ((new-env ((zip formal-params param-refs))))
-                (let ((new-store ((zip param-refs param_vals))))
+              (let ((new-env (zip formal-params param-refs)))
+                (let ((new-store (zip param-refs param-vals)))
                   (eval_expr (closure_body closure) new-env new-store defs))))))))))
 
 (define ref_list
@@ -333,18 +335,39 @@
     (eq? (car x) 'break)))
 
 ;; EXEC MAIN STATEMENT
+;; EXEC MAIN STATEMENT
 (define exec_stmt
-  (lambda (stmt rest store defs)
-    (cond ((null? stmt) defs)
-          ((assign? stmt) (eval_defs stmt) env store defs)
-          ((sequence? stmt) (eval_expr stmt) store defs)
-          ((if1? stmt) ((eval_bool (cadr stmt) store)(exec_stmt (cddr stmt) store)) defs)
-          ((if2? stmt) ((eval_bool (cadr stmt) store)(exec_stmt (cddr stmt) store)) defs)
-          ((pcall? stmt (())))
-          ((while? stmt) ((eval_bool (cadr stmt) store)(exec_stmt (cddr stmt) store)) defs)
-          ((break? stmt) defs store)
-          ((print? stmt) (display(eval_expr stmt env store defs)) ; (display ( evaluate expression ) )
-          (else (error 'exec_stmt ""invalid statment ~s"" stmt)))
+  (lambda (stmt rest env store defs)
+    (cond 
+      ((null? stmt)                                                 ;; no new statement
+          (display "null") (newline) )
+      ((assign? stmt)                                               ;; setting variable
+        (let nvar())
+        (eval_expr (caddr stmt) env store defs) 
+      )
+      ((if1? stmt)                                                  ;; just if stmt
+        (if (eval_bool (cadr stmt) env store defs)                  ;;bool
+          (exec_stmt (caddr stmt) rest env store defs)              ;; exp
+          (if (null? rest)                                 ;; make sure more things left
+            (exec_stmt '() rest env store defs)                     ;; end
+            (exec_stmt (car rest) (cdr rest) env store defs))))     ;;continue
+      ((if2? stmt)                                                  ;; if/else stmt
+        (if (eval_bool (cadr stmt) env store defs)                  ;; bool exp
+          (exec_stmt (caddr stmt) rest env store defs)              ;; exp 1
+          (exec_stmt (cadddr stmt) rest env store defs)))           ;; exp 2
+      ((while? stmt) 
+        (if (eval_bool (cadr stmt) env store defs)
+            (exec_stmt (cddr stmt) store) 
+             (display "false")))
+      ((break? stmt) 
+        defs store)
+      ((print? stmt) 
+        (display (cadr stmt)) (newline)
+        (if (null? rest)
+          (exec_stmt '() rest env store defs)
+          (exec_stmt (car rest) (cdr rest) env store defs)))
+      (else (error 'exec_stmt ""invalid statment ~s"" stmt))
+    )
   )
 )
 
@@ -352,3 +375,7 @@
 ; car(rest) --> environment
 ; rest ==> (env (S1, S2, S3...,Sn))
 ; need to return the env to use after a block
+
+
+
+(fcall '(fcall sq (3)) '((sq @)) '() '((@ (x) (pexpr * x x) ((sq @) ()))))
