@@ -340,6 +340,9 @@
 (define block?
   (lambda (stmt)
     (eq? (car stmt) 'block)))
+(define pcall?
+  (lambda (stmt)
+    (eq? (car stmt) 'pcall)))
 ;; EXEC MAIN STATEMENT
 ;; EXEC MAIN STATEMENT
 (define exec_stmt
@@ -377,6 +380,8 @@
         (if (not (null? stmt))                                
             (if (not (null? (cadddr stmt)))                
               (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
+      ((pcall? stmt)
+        (display "pcall"))
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
         (if (null? rest)                                 ;; make sure more things left
@@ -468,3 +473,8 @@
 
 
 ;(reverse (cons '((print sum) (print i)) (reverse '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))))))
+
+
+;'(block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) (print sum)))
+
+;(exec_stmt '(block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) (print sum))) '() '() '() '())
