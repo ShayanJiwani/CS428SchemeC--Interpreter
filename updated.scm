@@ -345,8 +345,8 @@
 (define exec_stmt
   (lambda (stmt rest env store defs)
     (cond 
-      ((null? stmt)                                                 ;; no new statement
-          (display "null") (newline))
+      ((null? stmt)
+      (display ""))
       ((block? stmt)
         (let ((env-store-defs (eval_defs (cadr stmt) env store defs)))
           (exec_stmt (caaddr stmt) (cdaddr stmt) (append env (car env-store-defs)) (append store (cadr env-store-defs)) (append defs (caddr env-store-defs))) 
@@ -373,10 +373,10 @@
           (exec_stmt (cadddr stmt) rest env store defs)))                   
       ((while? stmt) 
         (if (eval_bool (cadr stmt) env store defs)
-            (exec_stmt (list (caaddr stmt) (car (cdaddr stmt)) (reverse (cons stmt (reverse (caddr (caddr stmt)))))) rest env store defs)
-            (display store)))
-      ;((break? stmt) 
-      ;  defs store)
+            (exec_stmt (list (caaddr stmt) (car (cdaddr stmt)) (reverse (cons (reverse (cons rest (reverse stmt))) (reverse (caddr (caddr stmt)))))) rest env store defs)
+        (if (not (null? stmt))                                
+            (if (not (null? (cadddr stmt)))                
+              (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
         (if (null? rest)                                 ;; make sure more things left
@@ -458,3 +458,13 @@
 ;(reverse (cons '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i ;(expr - i 1))))) '((assign i (expr - i 1)))))
 
 ;(reverse (cons '(x y z) (reverse '((a b c) (d e f)))))
+
+
+;(exec_stmt '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) '((print sum)) '((i @) (sum #)) '((@ 2) (# 3)) '())
+
+;(list (caaddr stmt) (car (cdaddr stmt)) (reverse (cons stmt (reverse (caddr (caddr stmt))))))
+
+;(reverse (cons rest (reverse stmt)))
+
+
+;(reverse (cons '((print sum) (print i)) (reverse '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))))))
