@@ -394,7 +394,10 @@
       (let ((closure (assoc ref defs)))
         (let ((formal-params (closure_params closure)))
           (if (not (null? formal-params))
-            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store)))
+            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store defs)))
+              ;(let ((param-vals (param_vals (caddr exp) env store defs)))
+                ;(let ((new-env (zip formal-params param-refs)))
+                  ;(let ((new-store (zip param-refs param-vals)))
               (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))
             ((exec_stmt (closure_body closure) rest env store defs)))
               
@@ -430,28 +433,37 @@
 ;            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store)))
 ;              (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))))))))
 
+(set_all_vars '((val x) (val y)) '(3 4) )
+
 (define set_all_vars
-  (lambda (list-of-vars env store)
-    (let ((new-env-store (determine_type (car list-of-vars) env store)))
+  (lambda (list-of-vars passed-in-vars env store defs)
+    (let ((new-env-store (determine_type (car list-of-vars) (car passed-in-vars) env store defs)))
     ; if there's more vars to check
       (if (not (null? (cdr list-of-vars))) 
       ; recurse
-        (set_all_vars (cdr list-of-vars) (car new-env-store) (cadr new-env-store))
+        (set_all_vars (cdr list-of-vars) (cdr passed-in-vars) (car new-env-store) (cadr new-env-store) defs)
       ; or return the new-env-store that we created
         (new-env-store)))))
 
+; call eval_expr on pvar
+;(cons 'vdef (list (cadr '(val a)) (eval_expr '(expr + 2 5) '() '() '())))
+;(determine_type '(var a) 'x '((x @)) '((@ 5)) '())
 (define determine_type
-  (lambda (type env store)
+  (lambda (type pvar env store defs)
     (cond 
+      ;; make new variable in our env and store
       ((eq? (car type) 'val)
-      ;; do fcall type stuff
-      (let (( var-map (list (cadr type) ))
-       (eval_defs (list ))
-      )
+      (let (( var-map (cons 'vdef (list (cadr type) (eval_expr pvar env store defs)))))
+      ; returns (new-env, new-store, new-defs), but defs is unchanged so doesn't matter
+       (eval_defs (list var-map) env store defs)
+      ))
+      ;; get existing reference and add it to env
       ((eq? (car type) 'var)
         ;; get the reference and store it
-        (cadr type)
-      )
+        (let ((ref (cadr (assoc pvar env))))
+          (let ((new-var (list (cadr type) ref)))
+            (let ((new-env (cons new-var env)))
+              (list new-env store)))))
     )
   )
 )
