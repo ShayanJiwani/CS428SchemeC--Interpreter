@@ -376,7 +376,7 @@
             (if (not (null? (cadddr stmt)))                
               (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
       ((pcall? stmt)
-        (display "pcall"))
+        (pcall stmt rest env store defs))
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
         (if (null? rest)                                 ;; make sure more things left
@@ -388,18 +388,21 @@
 )
 ;pdef p ( (val x ) (var result ) )
 
+;(exec_stmt '(pcall add_one (a)) '() '((a @) (add_one #)) '((@ 2)) '( (# (x) (block () (pexpr + 1 x)) ((add_one #) ()) ) ) )
+
+;(eval_defs '((pdef add_one (x) (block ( ) (pexpr + 1 x)))) '() '() '() '())
+
+;(exec_stmt '(block () (pexpr + 1 x))
+
 (define pcall
   (lambda (stmt rest env store defs)
     (let ((ref (cadr (assoc (cadr stmt) env))))
       (let ((closure (assoc ref defs)))
         (let ((formal-params (closure_params closure)))
-          (if (not (null? formal-params))
+          ((if (not (null? formal-params))
             (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store defs)))
-              ;(let ((param-vals (param_vals (caddr exp) env store defs)))
-                ;(let ((new-env (zip formal-params param-refs)))
-                  ;(let ((new-store (zip param-refs param-vals)))
               (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))
-            ((exec_stmt (closure_body closure) rest env store defs)))
+            (exec_stmt (closure_body closure) rest env store defs)))
               
           )))))
 
@@ -433,17 +436,17 @@
 ;            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store)))
 ;              (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))))))))
 
-(set_all_vars '((val x) (val y)) '(3 4) )
-
+;(set_all_vars '((val x) (var y)) '(3 a) '((a @)) '((@ 3)) '())
+;'((pdef p ((val x ) (var result)) (block ( ) ((if1 (comp x ge 0) (block ( ) ((assign result (expr * result x)))))))))
 (define set_all_vars
   (lambda (list-of-vars passed-in-vars env store defs)
-    (let ((new-env-store (determine_type (car list-of-vars) (car passed-in-vars) env store defs)))
+  (let ((new-env-store (determine_type (car list-of-vars) (car passed-in-vars) env store defs)))
     ; if there's more vars to check
       (if (not (null? (cdr list-of-vars))) 
       ; recurse
-        (set_all_vars (cdr list-of-vars) (cdr passed-in-vars) (car new-env-store) (cadr new-env-store) defs)
+        new-env-store
       ; or return the new-env-store that we created
-        (new-env-store)))))
+        new-env-store))))
 
 ; call eval_expr on pvar
 ;(cons 'vdef (list (cadr '(val a)) (eval_expr '(expr + 2 5) '() '() '())))
@@ -561,3 +564,6 @@
 
 ;(pdef main ( ) (block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + ;sum i)) (assign i (expr - i 1)))))
 ;(print sum))))
+
+
+(exec_stmt '(pcall add_one (a)) '((print a)) '((a @) (add_one #)) '((@ 2)) '( (# ((var x)) (block () ((assign x (pexpr + 1 x)))) ((add_one #) ()) ) ) )
