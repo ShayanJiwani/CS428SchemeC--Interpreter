@@ -341,14 +341,15 @@
 ;; EXEC MAIN STATEMENT
 ;; EXEC MAIN STATEMENT
 
+;(exec_stmt '(block ( ) ((assign sum (pexpr + sum 1)))) '((print sum)) '((sum @)) '((@ 2)) '())
+
 (define exec_stmt
   (lambda (stmt rest env store defs)
     (cond 
       ((null? stmt) (display "here"))
       ((block? stmt)
         (let ((env-store-defs (eval_defs (cadr stmt) env store defs)))
-          (exec_stmt (caaddr stmt) (cdaddr stmt) (car env-store-defs) (cadr env-store-defs) (caddr env-store-defs))
-        )
+          (exec_stmt (caaddr stmt) (append (cdaddr stmt) rest)  (car env-store-defs) (cadr env-store-defs) (caddr env-store-defs)))
       )
       ((assign? stmt)
         (let ((value-map (list (cadr stmt) (eval_expr (caddr stmt) env store defs))))
@@ -374,9 +375,7 @@
                 (if (not (null? (cadddr stmt)))                
                   (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
       ((pcall? stmt)
-        (pcall stmt rest env store defs)
-        (if (not (null? rest))
-            (exec_stmt (car rest) (cdr rest) env store defs)))
+        (pcall stmt rest env store defs))
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
         (if (not (null? rest))                                   
