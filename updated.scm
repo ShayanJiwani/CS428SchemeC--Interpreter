@@ -340,14 +340,14 @@
     (eq? (car stmt) 'pcall)))
 ;; EXEC MAIN STATEMENT
 ;; EXEC MAIN STATEMENT
+
 (define exec_stmt
   (lambda (stmt rest env store defs)
     (cond 
-      ((null? stmt)
-      (display ""))
+      ((null? stmt) (display "here"))
       ((block? stmt)
         (let ((env-store-defs (eval_defs (cadr stmt) env store defs)))
-          (exec_stmt (caaddr stmt) (cdaddr stmt) (append env (car env-store-defs)) (append store (cadr env-store-defs)) (append defs (caddr env-store-defs))) 
+          (exec_stmt (caaddr stmt) (cdaddr stmt) (car env-store-defs) (cadr env-store-defs) (caddr env-store-defs))
         )
       )
       ((assign? stmt)
@@ -356,14 +356,12 @@
             (let ((ref-map (assoc ref store)))
               (let ((rstore (remove ref-map store)))
                 (let ((new-store (cons (list (car ref-map) (cadr value-map)) rstore)))
-                  (if (null? rest)
-                      (exec_stmt '() rest env new-store defs)
+                  (if (not (null? rest))
                       (exec_stmt (car rest) (cdr rest) env new-store defs))))))))
       ((if1? stmt)                                                  ;; just if stmt
         (if (eval_bool (cadr stmt) env store defs)                  ;;bool
           (exec_stmt (caddr stmt) rest env store defs)              ;; exp
-          (if (null? rest)                                 ;; make sure more things left
-            (exec_stmt '() rest env store defs)                     ;; end
+          (if (not (null? rest))                                 ;; make sure more things left
             (exec_stmt (car rest) (cdr rest) env store defs))))     ;;continue
       ((if2? stmt)                                                  ;; if/else stmt
         (if (eval_bool (cadr stmt) env store defs)                  ;; bool exp
@@ -372,15 +370,16 @@
       ((while? stmt) 
         (if (eval_bool (cadr stmt) env store defs)
             (exec_stmt (list (caaddr stmt) (car (cdaddr stmt)) (reverse (cons (reverse (cons rest (reverse stmt))) (reverse (caddr (caddr stmt)))))) rest env store defs)
-        (if (not (null? stmt))                                
-            (if (not (null? (cadddr stmt)))                
-              (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
+            (if (not (null? stmt))                                
+                (if (not (null? (cadddr stmt)))                
+                  (exec_stmt (car (cadddr stmt)) (cdr (cadddr stmt)) env store defs)))))
       ((pcall? stmt)
-        (pcall stmt rest env store defs))
+        (pcall stmt rest env store defs)
+        (if (not (null? rest))
+            (exec_stmt (car rest) (cdr rest) env store defs)))
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
-        (if (null? rest)                                 ;; make sure more things left
-            (exec_stmt '() rest env store defs)                     ;; end
+        (if (not (null? rest))                                   
             (exec_stmt (car rest) (cdr rest) env store defs)))
       (else (error 'exec_stmt ""invalid statment ~s"" stmt))
     )
@@ -399,11 +398,10 @@
     (let ((ref (cadr (assoc (cadr stmt) env))))
       (let ((closure (assoc ref defs)))
         (let ((formal-params (closure_params closure)))
-          ((if (not (null? formal-params))
+          (if (not (null? formal-params))
             (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store defs)))
               (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))
-            (exec_stmt (closure_body closure) rest env store defs)))
-              
+            (exec_stmt (closure_body closure) rest env store defs))
           )))))
 
 ;; pdef can either have a literal value called val
@@ -444,7 +442,7 @@
     ; if there's more vars to check
       (if (not (null? (cdr list-of-vars))) 
       ; recurse
-        new-env-store
+        (set_all_vars (cdr list-of-vars) (cdr passed-in-vars) (car new-env-store) (cadr new-env-store) defs)
       ; or return the new-env-store that we created
         new-env-store))))
 
@@ -566,4 +564,4 @@
 ;(print sum))))
 
 
-(exec_stmt '(pcall add_one (a)) '((print a)) '((a @) (add_one #)) '((@ 2)) '( (# ((var x)) (block () ((assign x (pexpr + 1 x)))) ((add_one #) ()) ) ) )
+(exec_stmt '(pcall add_one (a)) '((print a)) '((a @) (add_one #)) '((@ 2)) '( (# ((var x)) (block () ((assign x (pexpr + 1 x)))) ((add_one #)) ) ) )
