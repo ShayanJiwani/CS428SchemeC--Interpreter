@@ -458,20 +458,3 @@
 ;(reverse (cons '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i ;(expr - i 1))))) '((assign i (expr - i 1)))))
 
 ;(reverse (cons '(x y z) (reverse '((a b c) (d e f)))))
-
-
-(list 
-
-
-(caaddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))) 
-
-
-(car (cdaddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))))) 
-
-
-(reverse 
-(cons '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) 
-(reverse (caddr (caddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))))))))
-
-
-)
