@@ -391,6 +391,31 @@
     )
   )
 )
+;pdef p ( (val x ) (var result ) )
+
+;; pdef can either have a literal value called val
+;; or we have to use the reference when it's var
+;; so basically, we have to go through each of the params and see if its val or var 
+(define pcall
+  (lambda (stmt rest env store defs)
+  ;; this ref gets the pdef from the env
+    (let ((ref (cadr (assoc (cadr stmt) env))))
+    ;; this gets the body of the procedure
+      (let ((closure (assoc ref defs)))
+        ; this section is where we add any params to our new env
+        ; we have to go through each param and see if its val or var
+        ; if its var, then we use pass by reference, and have them set to the same
+        ; reference as the variable we are passing in, so we can edit its value
+        ; if its val, then we just do what we did with fcall, which is below
+        ; start section
+        (let ((formal-params (closure_params closure)))
+          (let ((param-refs (temp_refs (caddr exp))))
+            (let ((param-vals (param_vals (caddr exp) env store defs)))
+              (let ((new-env (zip formal-params param-refs)))
+              ; end section
+              
+                (let ((new-store (zip param-refs param-vals)))
+                  (eval_expr (closure_body closure) new-env new-store defs))))))))))
 
 ; cadr(rest) --> next statement
 ; car(rest) --> environment
@@ -478,3 +503,7 @@
 ;'(block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) (print sum)))
 
 ;(exec_stmt '(block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) (print sum))) '() '() '() '())
+
+
+(pdef main ( ) (block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))
+(print sum))))
