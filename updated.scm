@@ -59,11 +59,6 @@
     (else (cons (gensym) (temp_refs(cdr params)))))))
 
 
-;(cadr (assoc (cadr '(fcall sq (3))) '((sq @))))
-;(assoc '@ '((@ (x) (pexpr * x x) ((sq @) ()))))
-
-;(param_vals '(x) '((a #) (sq @)) '((# 4)) '(((@ (x) ;(pexpr * x x) ((sq @) ())))))
-
 (define fcall
   (lambda (exp env store defs)
     (let ((ref (cadr (assoc (cadr exp) env))))
@@ -393,15 +388,27 @@
 )
 ;pdef p ( (val x ) (var result ) )
 
+(define pcall
+  (lambda (stmt rest env store defs)
+    (let ((ref (cadr (assoc (cadr stmt) env))))
+      (let ((closure (assoc ref defs)))
+        (let ((formal-params (closure_params closure)))
+          (if (not (null? formal-params))
+            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store)))
+              (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))
+            ((exec_stmt (closure_body closure) rest env store defs)))
+              
+          )))))
+
 ;; pdef can either have a literal value called val
 ;; or we have to use the reference when it's var
 ;; so basically, we have to go through each of the params and see if its val or var 
-(define pcall
-  (lambda (stmt rest env store defs)
+;(define pcall
+;  (lambda (stmt rest env store defs)
   ;; this ref gets the pdef from the env
-    (let ((ref (cadr (assoc (cadr stmt) env))))
+;    (let ((ref (cadr (assoc (cadr stmt) env))))
     ;; this gets the body of the procedure
-      (let ((closure (assoc ref defs)))
+;      (let ((closure (assoc ref defs)))
         ; this section is where we add any params to our new env
         ; we have to go through each param and see if its val or var
         ; if its var, then we use pass by reference, and have them set to the same
@@ -409,7 +416,7 @@
         ; if its val, then we just do what we did with fcall, which is below
         ; a procedure doesn't have to have parameters (main is an example)
         ; start section
-        (let ((formal-params (closure_params closure)))
+;        (let ((formal-params (closure_params closure)))
         ; only do param refs if we have variables to add
         ; what we could do is have a function that maps all the variables in the param
         ; list to some function
@@ -418,35 +425,39 @@
         ; that has a conditional whether lambda is val or var
         ; if it's val do something, if var do another
         ; the map will properly store etc.
-          (if (not (null? formal-params))
-            (let ((param-refs (temp_refs (caddr exp))))
-              (let ((param-vals (param_vals (caddr exp) env store defs)))
-                (let ((new-env (zip formal-params param-refs)))
-                ; end section
-                  (let ((new-store (zip param-refs param-vals)))
-                    (eval_expr (closure_body closure) new-env new-store defs))))))
+;          (if (not (null? formal-params))
+            ; caddr stmt gives us what we are passing into the proc
+;            (let ((new-env-store (set_all_vars formal-params (caddr stmt) env store)))
+;              (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))))))))
 
-                  )))))
-
-
-(define map-all-vars
-  (lambda (list-of-vars)
-    (map (determine_type (lambda (var) (car var))) list-of-vars)
-  )
-)
+(define set_all_vars
+  (lambda (list-of-vars env store)
+    (let ((new-env-store (determine_type (car list-of-vars) env store)))
+    ; if there's more vars to check
+      (if (not (null? (cdr list-of-vars))) 
+      ; recurse
+        (set_all_vars (cdr list-of-vars) (car new-env-store) (cadr new-env-store))
+      ; or return the new-env-store that we created
+        (new-env-store)))))
 
 (define determine_type
-  (lambda type)
+  (lambda (type env store)
     (cond 
       ((eq? (car type) 'val)
       ;; do fcall type stuff
-        
+      (let (( var-map (list (cadr type) ))
+       (eval_defs (list ))
       )
       ((eq? (car type) 'var)
         ;; get the reference and store it
+        (cadr type)
       )
+    )
   )
+)
 
+; (val x) (5) --> (eval_defs on x) --> (x #) (# 5)
+; (var y) (a) --> (y @a) (a @) put it just in env
 
 ; cadr(rest) --> next statement
 ; car(rest) --> environment
