@@ -133,48 +133,54 @@
   (lambda (exp env store defs)
     (cond
       ((lessThan exp)
-        (< (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs)))
+        (< (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs)))
       ((lessThanEqual exp)
-        (<= (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs)))
+        (<= (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs)))
       ((equalTo exp)
-        (= (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs)))
+        (= (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs)))
       ((greaterThan exp)
-        (> (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs)))
+        (> (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs)))
       ((greaterThanEqual exp)
-        (>= (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs)))
+        (>= (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs)))
       ((notEqual exp)
-        (not (= (eval_expr (subexp1 exp) env store defs)
-        (eval_expr (subexp2 exp) env store defs))))
+        (not (= (eval_expr (bsubexp1 exp) env store defs)
+        (eval_expr (bsubexp2 exp) env store defs))))
       (else (error 'eval_expr ""invalid expression ~s"" exp)))))
+
+(define bsubexp1
+  (lambda (exp) (cadr exp)))
+
+(define bsubexp2
+  (lambda (exp) (cadddr exp)))
 
  (define lessThan
   (lambda (exp)
-    (eq? (cadr exp) 'le)))
+    (eq? (caddr exp) 'le)))
 
  (define lessThanEqual
   (lambda (exp)
-    (eq? (cadr exp) 'leq)))
+    (eq? (caddr exp) 'leq)))
 
  (define equalTo
   (lambda (exp)
-    (eq? (cadr exp) 'eq)))
+    (eq? (caddr exp) 'eq)))
 
  (define greaterThan
   (lambda (exp)
-    (eq? (cadr exp) 'ge)))
+    (eq? (caddr exp) 'ge)))
 
  (define greaterThanEqual
   (lambda (exp)
-     (eq? (cadr exp) 'geq)))
+     (eq? (caddr exp) 'geq)))
 
  (define notEqual
   (lambda (exp)
-     (eq? (cadr exp) 'neq)))
+     (eq? (caddr exp) 'neq)))
 
 
 ;; eval_def creates the binding for a single definition
@@ -331,9 +337,9 @@
 ;(define break?
 ;  (lambda (x)
 ;    (eq? (car x) 'break)))
-;(define block?
-;  (lambda (stmt)
-;    (eq? (car stmt) 'block)))
+(define block?
+  (lambda (stmt)
+    (eq? (car stmt) 'block)))
 ;; EXEC MAIN STATEMENT
 ;; EXEC MAIN STATEMENT
 (define exec_stmt
@@ -341,16 +347,20 @@
     (cond 
       ((null? stmt)                                                 ;; no new statement
           (display "null") (newline))
+      ((block? stmt)
+        (let ((env-store-defs (eval_defs (cadr stmt) env store defs)))
+          (exec_stmt (caaddr stmt) (cdaddr stmt) (append env (car env-store-defs)) (append store (cadr env-store-defs)) (append defs (caddr env-store-defs))) 
+        )
+      )
       ((assign? stmt)
-        (let value-map ((list 1 2 3))
-          (value-map)))
-         ; (let ref ((cadr (assoc (car value-map) env)))
-         ;   (let ref-map ((assoc ref store))
-         ;     (let rstore ((remove ref-map store))
-         ;       (let new-store ((cons (list (car ref-map) (cadr value-map)) rstore))
-         ;         (if (null? rest)
-         ;             (exec_stmt '() rest env new-store defs)
-         ;             (exec_stmt (car rest) (cdr rest) env new-store defs))))))))
+        (let ((value-map (list (cadr stmt) (eval_expr (caddr stmt) env store defs))))
+          (let ((ref (cadr (assoc (car value-map) env))))
+            (let ((ref-map (assoc ref store)))
+              (let ((rstore (remove ref-map store)))
+                (let ((new-store (cons (list (car ref-map) (cadr value-map)) rstore)))
+                  (if (null? rest)
+                      (exec_stmt '() rest env new-store defs)
+                      (exec_stmt (car rest) (cdr rest) env new-store defs))))))))
       ((if1? stmt)                                                  ;; just if stmt
         (if (eval_bool (cadr stmt) env store defs)                  ;;bool
           (exec_stmt (caddr stmt) rest env store defs)              ;; exp
@@ -360,18 +370,18 @@
       ((if2? stmt)                                                  ;; if/else stmt
         (if (eval_bool (cadr stmt) env store defs)                  ;; bool exp
           (exec_stmt (caddr stmt) rest env store defs)              ;; exp 1
-          (exec_stmt (cadddr stmt) rest env store defs)))           ;; exp 2
+          (exec_stmt (cadddr stmt) rest env store defs)))                   
       ((while? stmt) 
         (if (eval_bool (cadr stmt) env store defs)
-            (exec_stmt (cddr stmt) store) 
-             (display "false")))
+            (exec_stmt (list (caaddr stmt) (car (cdaddr stmt)) (reverse (cons stmt (reverse (caddr (caddr stmt)))))) rest env store defs)
+            (display store)))
       ;((break? stmt) 
       ;  defs store)
       ((print? stmt) 
         (display (eval_expr (cadr stmt) env store defs)) (newline)
-        (if (null? rest)
-          (exec_stmt '() rest env store defs)
-          (exec_stmt (car rest) (cdr rest) env store defs)))
+        (if (null? rest)                                 ;; make sure more things left
+            (exec_stmt '() rest env store defs)                     ;; end
+            (exec_stmt (car rest) (cdr rest) env store defs)))
       (else (error 'exec_stmt ""invalid statment ~s"" stmt))
     )
   )
@@ -419,3 +429,49 @@
 ;(exec_stmt '(assign sum (expr + sum i)) '() '((sum @) (i #)) '((@ 3) (# 2)) '()) 
 ;(exec_stmt '(print "end") '() '() '() '())
 ;(exec_stmt '(print (pexpr + 2 3)) '((print (pexpr * 2 3)) (print (pexpr / 10 2))) '() '() '())
+
+;(exec_stmt '(if1 (comp le 2 3) (display "hi")) '() '() '() '())
+
+;(exec_stmt '(assign sum (expr + sum i)) '() '((sum @) (i #)) '((@ 3) (# 2)) '()) 
+
+
+;(exec_stmt '(assign sum (expr + sum i)) '((print (expr + sum i))) '((sum @) (i #)) '((@ 3) (# 2)) '())
+
+;(exec_stmt '(block ((vdef x 1) (vdef y (expr + x 1 ))) ((if2 (comp x ge y) (print x) (print y)))) '() '() '() '())
+
+
+;(exec_stmt '(if2 (comp x ge y) (print x) (print y)) '() '((x @) (y #)) '((@ 2) (# 3)) '() )
+
+
+;(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) 
+
+;(exec_stmt '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) '() '((i @) (sum #)) '((@ 2) (# 3)) '())
+
+
+;(exec_stmt '(block ((vdef x 1) (vdef y (expr + x 1 ))) ((if2 (comp x ge y) (print x) (print y)))) '((print (pexpr * 2 3))) '() '() '())
+
+;; while --> add while stmt to end of block statements --> do block --> reach while --> repeat
+
+;'(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))
+;'((assign i (expr - i 1)))
+
+;(reverse (cons '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i ;(expr - i 1))))) '((assign i (expr - i 1)))))
+
+;(reverse (cons '(x y z) (reverse '((a b c) (d e f)))))
+
+
+(list 
+
+
+(caaddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))) 
+
+
+(car (cdaddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))))) 
+
+
+(reverse 
+(cons '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) 
+(reverse (caddr (caddr '(while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))))))))
+
+
+)
