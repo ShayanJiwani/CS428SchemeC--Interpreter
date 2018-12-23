@@ -407,15 +407,46 @@
         ; if its var, then we use pass by reference, and have them set to the same
         ; reference as the variable we are passing in, so we can edit its value
         ; if its val, then we just do what we did with fcall, which is below
+        ; a procedure doesn't have to have parameters (main is an example)
         ; start section
         (let ((formal-params (closure_params closure)))
-          (let ((param-refs (temp_refs (caddr exp))))
-            (let ((param-vals (param_vals (caddr exp) env store defs)))
-              (let ((new-env (zip formal-params param-refs)))
-              ; end section
-              
-                (let ((new-store (zip param-refs param-vals)))
-                  (eval_expr (closure_body closure) new-env new-store defs))))))))))
+        ; only do param refs if we have variables to add
+        ; what we could do is have a function that maps all the variables in the param
+        ; list to some function
+        ; meaning: map getref (*list*)
+        ; the getref function that we do to every member of the list is just a function
+        ; that has a conditional whether lambda is val or var
+        ; if it's val do something, if var do another
+        ; the map will properly store etc.
+          (if (not (null? formal-params))
+            (let ((param-refs (temp_refs (caddr exp))))
+              (let ((param-vals (param_vals (caddr exp) env store defs)))
+                (let ((new-env (zip formal-params param-refs)))
+                ; end section
+                  (let ((new-store (zip param-refs param-vals)))
+                    (eval_expr (closure_body closure) new-env new-store defs))))))
+
+                  )))))
+
+
+(define map-all-vars
+  (lambda (list-of-vars)
+    (map (determine_type (lambda (var) (car var))) list-of-vars)
+  )
+)
+
+(define determine_type
+  (lambda type)
+    (cond 
+      ((eq? (car type) 'val)
+      ;; do fcall type stuff
+        
+      )
+      ((eq? (car type) 'var)
+        ;; get the reference and store it
+      )
+  )
+
 
 ; cadr(rest) --> next statement
 ; car(rest) --> environment
@@ -505,5 +536,5 @@
 ;(exec_stmt '(block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))) (print sum))) '() '() '() '())
 
 
-(pdef main ( ) (block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1)))))
-(print sum))))
+;(pdef main ( ) (block ((vdef sum 0 ) (vdef i 5)) ((while (comp i ge 0) (block ( ) ((assign sum (expr + ;sum i)) (assign i (expr - i 1)))))
+;(print sum))))
