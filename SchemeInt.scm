@@ -331,18 +331,30 @@
 (define break?
   (lambda (x)
     (eq? (car x) 'break)))
-
+(define block?
+  (lambda (stmt)
+    (eq? (car stmt) 'block)))
 ;; EXEC MAIN STATEMENT
 ;; EXEC MAIN STATEMENT
 (define exec_stmt
   (lambda (stmt rest env store defs)
     (cond 
       ((null? stmt)                                                 ;; no new statement
-          (display "null") (newline) )
-      ((assign? stmt)                                               ;; setting variable
-        (let nvar())
-        (eval_expr (caddr stmt) env store defs) 
+          (display "null") (newline))
+      ((block? stmt)
+        (let env-store-defs (eval_defs (cadr stmt) env store defs)
+          (exec_stmt (caaddr stmt) (cdr (caddr stmt)) (car env-store-defs) (cadr env-store-defs) (caddr env-store-defs)) 
+        )
       )
+      ((assign? stmt)
+        (let value-map (list (cadr stmt) (eval_expr (caddr stmt) env store defs))
+          (let ref (cadr (assoc (car value-map) env))
+            (let ref-map (assoc ref store)
+              (let rstore (remove ref-map store)
+                (let new-store (cons (list (car ref-map) (cadr value-map)) rstore)
+                  (if (null? rest)
+                      (exec_stmt '() rest env new-store defs)
+                      (exec_stmt (car rest) (cdr rest) env new-store defs))))))))
       ((if1? stmt)                                                  ;; just if stmt
         (if (eval_bool (cadr stmt) env store defs)                  ;;bool
           (exec_stmt (caddr stmt) rest env store defs)              ;; exp
@@ -357,8 +369,8 @@
         (if (eval_bool (cadr stmt) env store defs)
             (exec_stmt (cddr stmt) store) 
              (display "false")))
-      ((break? stmt) 
-        defs store)
+      ;((break? stmt) 
+      ;  defs store)
       ((print? stmt) 
         (display (cadr stmt)) (newline)
         (if (null? rest)
@@ -375,4 +387,35 @@
 ; need to return the env to use after a block
 
 
-(fcall '(fcall add (a, b)) '((sq @) (a #)) '((# 5)) '((@ (x) (pexpr * x x) ((sq @) ()))))
+;(fcall '(fcall add (a b)) '((add @) (a #) (b $)) '((# 5) ($ 2)) '((@ (x y) (pexpr + x y) ((add @) ()))))\
+
+
+
+(block ( ) ((assign sum (expr + sum i)) (assign i (expr - i 1))))
+
+
+
+((assign? stmt)
+  (let value-map (list (cadr stmt) (eval_expr (caddr stmt) env store defs))
+    (let ref (cadr (assoc (car value-map) env))
+      (let ref-map (assoc ref store)
+        (let rstore (remove ref-map store)
+          (let new-store (cons (list (car ref-map) (cadr value-map)) rstore)
+            (if (null? rest)
+                (exec_stmt '() rest env new-store defs)
+                (exec_stmt (car rest) (cdr rest) env new-store defs)))))))
+)
+
+(list (cadr '(assign sum (expr + sum i))) (eval_expr (caddr '(assign sum (expr + sum i))) '((sum @) (i #)) '((@ 1) (# 2)) '()))
+
+
+;; say we have '((@ 4) (# 2) ($ 5))
+
+;; updating @
+
+;; we want '((@ 10) (# 2) ($ 5))
+
+
+;; we pull out '(@ 4)
+
+;(cons (list (car '(@ 1)) (cadr '(sum 3))) '((# 2)))
