@@ -41,7 +41,6 @@
 
 (define param_vals 
   (lambda (params env store defs)
-    (display params) (newline)
     (cond
     ((null? (cdr params))
       (list(eval_expr (car params) env store defs)))
@@ -60,6 +59,7 @@
 
 (define fcall
   (lambda (exp env store defs)
+    ;(display env) (newline) (newline)
     (let ((ref (cadr (assoc (cadr exp) env))))
       (let ((closure (assoc ref defs)))
         (let ((formal-params (map cadr (closure_params closure))))
@@ -67,7 +67,8 @@
             (let ((param-vals (param_vals (caddr exp) env store defs)))
               (let ((new-env (zip formal-params param-refs)))
                 (let ((new-store (zip param-refs param-vals)))
-                  (eval_expr (closure_body closure) new-env new-store defs))))))))))
+                  ;(display (cons (assoc (cadr exp) (cadddr closure)) new-env)) (newline) (newline)
+                  (eval_expr (closure_body closure) (cons (assoc (cadr exp) (cadddr closure)) new-env) new-store defs))))))))))
 
 (define ref_list
     (lambda (keys lst)
@@ -256,7 +257,7 @@
           (cons (cadr new-binding) defs)
         )
       )
-      (else display def)
+      ;(else display def)
     )
   )
 )
@@ -366,6 +367,7 @@
               (exec_stmt (closure_body closure) rest (car new-env-store) (cadr new-env-store) defs))
             (exec_stmt (closure_body closure) rest env store defs))
           )))))
+
 (define set_all_vars
   (lambda (list-of-vars passed-in-vars env store defs)
   (let ((new-env-store (determine_type (car list-of-vars) (car passed-in-vars) env store defs)))
@@ -388,9 +390,9 @@
     )
   )
 )
-;(define ptree (quote  (prog ( (fdef ack ( (val x ) (val y ) ) (if (comp x ge 0 ) (if (comp y ge 0 ) (fcall ack ( (expr - x 1 ) (fcall ack ( x (expr - y 1 ) ) ) ) ) (fcall ack ( (expr - x 1 ) 1 ) ) ) (expr + y 1 ) ) ) (pdef main ( ) (block ( (vdef a 5 ) (vdef b 2 ) ) ( (print (fcall ack ( a b ) ) ) ) ) ) ) (pcall main ( ) ) )))
+(define ptree (quote  (prog ( (fdef ack ( (val x ) (val y ) ) (if (comp x ge 0 ) (if (comp y ge 0 ) (fcall ack ( (expr - x 1 ) (fcall ack ( x (expr - y 1 ) ) ) ) ) (fcall ack ( (expr - x 1 ) 1 ) ) ) (expr + y 1 ) ) ) (pdef main ( ) (block ( (vdef a 5 ) (vdef b 2 ) ) ( (print (fcall ack ( a b ) ) ) ) ) ) ) (pcall main ( ) ) )))
 
-(define ptree (quote  (prog ( (fdef gcd ( (val p ) (val q ) ) (if (comp q eq 0 ) p (fcall gcd ( q (expr % p q ) ) ) ) ) (pdef inc ( (var y ) ) (block ( ) ( (assign y (expr + y 1 ) ) ) ) ) (pdef main ( ) (block ( (vdef count 0 ) (vdef n 20 ) (vdef i 1 ) ) ( (while (comp i le n ) (block ( (vdef flag (fcall gcd ( i n ) ) ) ) ( (if1 (comp flag eq 1 ) (pcall inc ( count ) ) ) (pcall inc ( i ) ) ) ) ) (print count ) ) ) ) ) (pcall main ( ) ) )))
+;(define ptree (quote  (prog ( (fdef gcd ( (val p ) (val q ) ) (if (comp q eq 0 ) p (fcall gcd ( q (expr % p q ) ) ) ) ) (pdef inc ( (var y ) ) (block ( ) ( (assign y (expr + y 1 ) ) ) ) ) (pdef main ( ) (block ( (vdef count 0 ) (vdef n 20 ) (vdef i 1 ) ) ( (while (comp i le n ) (block ( (vdef flag (fcall gcd ( i n ) ) ) ) ( (if1 (comp flag eq 1 ) (pcall inc ( count ) ) ) (pcall inc ( i ) ) ) ) ) (print count ) ) ) ) ) (pcall main ( ) ) )))
 
 (define compute
   (lambda ()
