@@ -390,7 +390,7 @@
     )
   )
 )
-(define ptree (quote  (prog ( (fdef ack ( (val x ) (val y ) ) (if (comp x ge 0 ) (if (comp y ge 0 ) (fcall ack ( (expr - x 1 ) (fcall ack ( x (expr - y 1 ) ) ) ) ) (fcall ack ( (expr - x 1 ) 1 ) ) ) (expr + y 1 ) ) ) (pdef main ( ) (block ( (vdef a 5 ) (vdef b 2 ) ) ( (print (fcall ack ( a b ) ) ) ) ) ) ) (pcall main ( ) ) )))
+;(define ptree (quote  (prog ( (fdef ack ( (val x ) (val y ) ) (if (comp x ge 0 ) (if (comp y ge 0 ) (fcall ack ( (expr - x 1 ) (fcall ack ( x (expr - y 1 ) ) ) ) ) (fcall ack ( (expr - x 1 ) 1 ) ) ) (expr + y 1 ) ) ) (pdef main ( ) (block ( (vdef a 3 ) (vdef b 4 ) ) ( (print (fcall ack ( a b ) ) ) ) ) ) ) (pcall main ( ) ) )))
 
 ;(define ptree (quote  (prog ( (fdef gcd ( (val p ) (val q ) ) (if (comp q eq 0 ) p (fcall gcd ( q (expr % p q ) ) ) ) ) (pdef inc ( (var y ) ) (block ( ) ( (assign y (expr + y 1 ) ) ) ) ) (pdef main ( ) (block ( (vdef count 0 ) (vdef n 20 ) (vdef i 1 ) ) ( (while (comp i le n ) (block ( (vdef flag (fcall gcd ( i n ) ) ) ) ( (if1 (comp flag eq 1 ) (pcall inc ( count ) ) ) (pcall inc ( i ) ) ) ) ) (print count ) ) ) ) ) (pcall main ( ) ) )))
 
